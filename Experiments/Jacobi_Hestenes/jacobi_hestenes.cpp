@@ -19,6 +19,11 @@ void jacobi(std::vector<std::vector<double>>& A);
 void jacobi_rotate(std::vector<std::vector<double>>& A, int i, int j);
 
 // structure to configure the matrix multiplier
+/*
+1) ARCH = 2 => floating point data, LOW on Resouces, LOW on throughput, HIGH on Latency
+2) INNER_II = 1 => any data type, HIGH on Resources, HIGH on throughput, LOW on Latency
+3) UNROLL_FACTOR = 2 => HIGH on Resouce, HIGH on throughput, LOW on latency
+*/
 struct MY_CONFIG: hls::matrix_multiply_traits<hls::NoTranspose, hls::NoTranspose, A_ROWS, A_COLS, B_ROWS, B_COLS, MATRIX_T, MATRIX_T>{
     static const int ARCH = 2;
     static const int INNER_II = 1;
@@ -26,7 +31,10 @@ struct MY_CONFIG: hls::matrix_multiply_traits<hls::NoTranspose, hls::NoTranspose
 };
 
 /**
- * Main function to initialize matrices and perform Jacobi iterations.
+ * Main function to find eigenvalues using Jacobi iterations.
+ * Initializes input and identity matrices, performs Jacobi iterations on the input matrix.
+ * 
+ * @return 0 on successful completion
  */
 int main() {
     // Define and initialize the input matrix and identity matrix
@@ -154,4 +162,25 @@ void jacobi_rotate(std::vector<std::vector<double>>& A, int i, int j) {
 
     // Update the eigenvector matrix V
     // V = VP, using optimized multiplier provided by Xilinx HLS
+    // Convert std::vector matrices V and P to C-style arrays for HLS multiplication
+    double V_array[NUM_ROWS][NUM_COLS], P_array[NUM_ROWS][NUM_COLS];
+    for (int r = 0; r < NUM_ROWS; r++) {
+        for (int c = 0; c < NUM_COLS; c++) {
+            V_array[r][c] = V[r][c];
+            P_array[r][c] = P[r][c];
+        }
+    }
+
+    // Multiply V and P using HLS matrix multiplication with MY_CONFIG configuration
+    hls::matrix_multiply<hls::NoTranspose, hls::NoTranspose, MY_CONFIG>(V_array, P_array, V_array);
+
+    // Copy result back from V_array to std::vector v
+    for (int r = 0; r < NUM_ROWS; r++) {
+        for (int c = 0; c < NUM_COLS; c++) {
+            V[r][c] = V_array[r][c];
+        }
+    }
+
+
+    
 }
