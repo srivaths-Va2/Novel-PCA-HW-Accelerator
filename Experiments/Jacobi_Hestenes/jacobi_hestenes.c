@@ -9,6 +9,31 @@
 #define MAX_ITER    100     // Number of iterations to be carried to convergence
 #define EPSILON     1e-9    // Threshold value for convergence
 
+
+double V[NUM_ROWS][NUM_COLS];
+
+void matrix_multiply(double A[NUM_ROWS][NUM_COLS], double B[NUM_ROWS][NUM_COLS], double result[NUM_ROWS][NUM_COLS])
+/**
+ * Multiply two matrices A and B and store the result in matrix 'result'.
+ * This function will handle both the multiplication of Res = A * P and P^T * Res.
+ * 
+ * @param A The first matrix in the multiplication.
+ * @param B The second matrix in the multiplication.
+ * @param result The resulting matrix.
+ */
+{
+    for (int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            result[i][j] = 0;
+            for (int k = 0; k < NUM_COLS; k++) {
+                result[i][j] += A[i][k] * B[k][j];  // Perform matrix multiplication
+            }
+        }
+    }
+}
+
+
+
 void init_input_matrix()
 /**
  * Initialize the input matrix with predefined values.
@@ -43,7 +68,7 @@ void init_identity_matrix()
     }
 }
 
-void jacobi(double A[NUM_ROWS][NUM_COLS])
+void jacobi(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS])
 /**
  * Perform the Jacobi iteration on a given matrix A to find the eigenvalues.
  * 
@@ -79,11 +104,11 @@ void jacobi(double A[NUM_ROWS][NUM_COLS])
         }
 
         // Compute the Jacobi rotation
-        jacobi_rotate(A, i, j); 
+        jacobi_rotate(A, V, i, j); 
     }
 }
 
-void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], int i, int j)
+void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS], int i, int j)
 /**
  * Perform a Jacobi rotation on a given matrix A at indices i and j.
  * Update the matrix A with the rotation and construct a Jacobi rotation matrix P.
@@ -116,6 +141,9 @@ void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], int i, int j)
     A[j][i] = (-1 * s);
 
     // add optimized multiplier. Multiply Res = A & P
+    // Multiply Res = A * P
+    double Res[NUM_ROWS][NUM_COLS];
+    matrix_multiply(A, P, Res);
 
     // take transpose
     for(int i = 0; i < NUM_ROWS; i++)
@@ -127,7 +155,14 @@ void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], int i, int j)
     }
 
     // Multiply P^T and Res using same optimized multiplier
+    // Multiply P^T * Res to update matrix A
+    matrix_multiply(P, Res, A);
+
+
 
     // Update the eigenvector matrix V
     // V = VP, using optimized multiplier provided by Xilinx HLS
+    // Update eigenvector matrix V = V * P
+    double tempV[NUM_ROWS][NUM_COLS];
+    matrix_multiply(V, P, tempV);
 }
