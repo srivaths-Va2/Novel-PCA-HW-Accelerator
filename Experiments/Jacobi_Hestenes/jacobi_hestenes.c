@@ -12,11 +12,14 @@
 
 double V[NUM_ROWS][NUM_COLS];
 
+void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS], int i, int j);
+
+
 void matrix_multiply(double A[NUM_ROWS][NUM_COLS], double B[NUM_ROWS][NUM_COLS], double result[NUM_ROWS][NUM_COLS])
 /**
  * Multiply two matrices A and B and store the result in matrix 'result'.
  * This function will handle both the multiplication of Res = A * P and P^T * Res.
- * 
+ *
  * @param A The first matrix in the multiplication.
  * @param B The second matrix in the multiplication.
  * @param result The resulting matrix.
@@ -47,7 +50,7 @@ void init_input_matrix()
     A[1][0] = 4; A[1][1] = 5; A[1][2] = 6;
     A[2][0] = 7; A[2][1] = 8; A[2][2] = 9;
 
-    
+   
 }
 
 void init_identity_matrix()
@@ -71,7 +74,7 @@ void init_identity_matrix()
 void jacobi(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS])
 /**
  * Perform the Jacobi iteration on a given matrix A to find the eigenvalues.
- * 
+ *
  * @param A The matrix on which the Jacobi iteration is performed
  */
 {
@@ -104,7 +107,7 @@ void jacobi(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS])
         }
 
         // Compute the Jacobi rotation
-        jacobi_rotate(A, V, i, j); 
+        jacobi_rotate(A, V, i, j);
     }
 }
 
@@ -119,50 +122,33 @@ void jacobi_rotate(double A[NUM_ROWS][NUM_COLS], double V[NUM_ROWS][NUM_COLS], i
 
     theta = 0.5 * atan((2 * A[i][j]) / (A[i][i] - A[j][j]));
 
-    // Constructing a Jacobi rotation matrix P
     double P[NUM_ROWS][NUM_COLS];
-    // populating the matrix with 1's at the diagonal
-    for(int i = 0; i < NUM_ROWS; i++)
-    {
-        for(int j = 0; j < NUM_COLS; j++)
-        {
-            P[i][j] = (i == j) ? 1 : 0;
+    // Use 'row' and 'col' instead of 'i' and 'j'
+    for(int row = 0; row < NUM_ROWS; row++) {
+        for(int col = 0; col < NUM_COLS; col++) {
+            P[row][col] = (row == col) ? 1 : 0;
         }
     }
 
-    // getting the sine anc cosine terms to be popukated in the array
     double c = cos(theta);
     double s = sin(theta);
 
-    // populating the sine and cosine terms
     A[i][i] = c;
     A[j][j] = c;
     A[i][j] = s;
     A[j][i] = (-1 * s);
 
-    // add optimized multiplier. Multiply Res = A & P
-    // Multiply Res = A * P
     double Res[NUM_ROWS][NUM_COLS];
     matrix_multiply(A, P, Res);
 
-    // take transpose
-    for(int i = 0; i < NUM_ROWS; i++)
-    {
-        for(int j = 0; j < NUM_COLS; j++)
-        {
-            P[j][i] = P[i][j];
+    for(int row1 = 0; row1 < NUM_ROWS; row1++) {
+        for(int col1 = 0; col1 < NUM_COLS; col1++) {
+            P[col1][row1] = P[row1][col1];
         }
     }
 
-    // Multiply P^T and Res using same optimized multiplier
-    // Multiply P^T * Res to update matrix A
     matrix_multiply(P, Res, A);
 
-
-
-    // Update the eigenvector matrix V
-    // V = VP, using optimized multiplier provided by Xilinx HLS
-    // Update eigenvector matrix V = V * P
     double tempV[NUM_ROWS][NUM_COLS];
     matrix_multiply(V, P, tempV);
 }
